@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Music Café — Responsive with Combo Popup</title>
+  <link rel="icon" href="Music cafe logo.png" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#D4A055;
+    --gold-dark:#b78e46;
+    --bg-top:#2b1a12;
+    --bg-bottom:#331f12;
+    --ivory:#F8F8F8;
+    --muted: rgba(248,248,248,0.66);
+    --card-bg: rgba(255,255,255,0.02);
+    --ui-radius:12px;
+    --max-width:1200px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Montserrat,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:
+    linear-gradient(180deg,var(--bg-top), var(--bg-bottom)) fixed; color:var(--ivory);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+
+  /* page wrapper */
+  .page{
+    max-width:calc(var(--max-width) - 40px);
+    margin:28px auto;
+    border-radius:14px;
+    overflow:hidden;
+    background: transparent; /* let body gradient be continuous to avoid banding */
+    border:1px solid rgba(212,160,85,0.06);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+  }
+
+  /* HERO - centered perfectly */
+  .hero{
+    min-height:240px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:34px 18px;
+    position:relative;
+    /* subtle vignette but not a repeated band */
+    background: linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.12));
+  }
+  .hero-inner{
+    width:100%;
+    max-width:920px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;   /* CENTER ALIGN */
+    justify-content:center;
+    gap:8px;
+    z-index:2;
+  }
+  .logo-wrap{ width:86px; height:86px; border-radius:999px; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08)); border:2px solid rgba(255,255,255,0.03) }
+  .logo-wrap img{ width:74%; height:74%; object-fit:contain; display:block }
+
+  h1{ font-family:Anton, sans-serif; color:var(--gold); font-size:34px; margin:6px 0 2px; letter-spacing:3px; text-shadow:0 8px 22px rgba(0,0,0,0.55) }
+  p.lead{ margin:0; color:var(--muted); font-weight:500 }
+
+  /* main grid with areas (ensures side appears above on small screens) */
+  .main{
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    grid-template-areas: "content side";
+    gap:20px;
+    padding:18px;
+  }
+  @media (max-width:760px){
+    .main{
+      grid-template-columns:1fr;
+      grid-template-areas: "side" "content";
+      padding:12px;
+    }
+  }
+
+  /* side panel */
+  .side{ grid-area: side; border-radius:var(--ui-radius); padding:14px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.04)); border:1px solid rgba(255,255,255,0.03) }
+  .side h4{ margin:0 0 8px; color:var(--gold); font-weight:900 }
+  .side p{ margin:0 0 12px; color:var(--muted) }
+
+  .filter{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px }
+  .chip{ padding:8px 10px; border-radius:999px; background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--ivory); font-weight:700; cursor:pointer }
+  .chip.active{ background: linear-gradient(90deg,var(--gold),var(--gold-dark)); color:#000; box-shadow:0 12px 30px rgba(212,160,85,0.08) }
+
+  /* Combo button (side) - opens modal */
+  .combo-btn{ display:inline-block; margin-top:8px; padding:10px 14px; border-radius:10px; background:linear-gradient(90deg,var(--gold),var(--gold-dark)); color:#000; font-weight:900; cursor:pointer; border:none }
+
+  /* content area */
+  .content{ grid-area: content; }
+
+  .controls{ display:flex; gap:12px; align-items:center; margin-bottom:14px; justify-content:space-between; flex-wrap:wrap }
+  .left-controls{ display:flex; gap:12px; align-items:center; flex:1; min-width:0 }
+
+  .select-wrap{ position:relative; width:220px; }
+  .custom-select{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)); border:1px solid rgba(255,255,255,0.04); color:var(--ivory); cursor:pointer; user-select:none; }
+  .custom-select .label{ font-weight:700; font-size:14px }
+  .custom-select .arrow{ width:16px; height:16px; transform-origin:center; transition:transform .16s ease }
+
+  .options{ position:absolute; top:calc(100% + 8px); left:0; right:0; background: linear-gradient(180deg, rgba(12,12,12,0.98), rgba(8,8,8,0.98)); border-radius:10px; border:1px solid rgba(255,255,255,0.04); overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.7); z-index:60; display:none; min-width:240px; }
+  .options.open{ display:block; animation: dropdown .14s ease }
+  .option{ padding:10px 12px; cursor:pointer; font-weight:700; color:rgba(248,248,248,0.95); border-bottom:1px solid rgba(255,255,255,0.03) }
+  .option:last-child{ border-bottom:0 }
+  .option:hover{ background: linear-gradient(90deg, rgba(212,160,85,0.03), rgba(255,255,255,0.01)); color:#fff }
+  .option.selected{ background: linear-gradient(90deg,var(--gold),var(--gold-dark)); color:#000 }
+
+  @keyframes dropdown{ from{ transform: translateY(-6px); opacity:0 } to{ transform:none; opacity:1 } }
+
+  input#search{ padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--ivory); min-width:160px; }
+
+  .menu-wrap{ display:grid; grid-template-columns: repeat(2,1fr); gap:14px; }
+  @media (max-width:860px){ .menu-wrap{ grid-template-columns:1fr } }
+
+  .section-card{ background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(0,0,0,0.06)); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.03); transition:transform .22s ease; will-change:transform }
+  .section-card:hover{ transform: translateY(-6px) }
+  .section-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+  .section-header h3{ margin:0; color:var(--gold); font-weight:800; font-size:16px }
+  .section-header small{ color:var(--muted) }
+
+  .item-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:8px 2px; border-radius:8px; transition:background .15s ease, transform .15s ease }
+  .item-row + .item-row{ margin-top:8px }
+  .item-row:hover{ background: linear-gradient(90deg, rgba(212,160,85,0.02), rgba(255,255,255,0.01)); transform: translateY(-3px) }
+
+  .left{ display:flex; gap:10px; align-items:flex-start; min-width:0 }
+  .thumb{ width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)); color:var(--gold); font-weight:900; flex-shrink:0 }
+  .meta .name{ font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px }
+  .meta .desc{ margin-top:6px; font-size:12px; color:var(--muted) }
+
+  .price{ color:var(--gold); font-weight:900; min-width:72px; text-align:right; font-size:14px }
+
+  /* reveal helper */
+  .reveal{ opacity:0; transform:translateY(8px); transition: transform .48s cubic-bezier(.2,.9,.3,1), opacity .4s ease; will-change:transform,opacity }
+  .reveal.show{ opacity:1; transform:none }
+
+  /* scroll popup (toast) bottom-right */
+  .combo-toast{
+    position:fixed; right:18px; bottom:18px; z-index:9999; width:300px; max-width:calc(100% - 40px);
+    background: linear-gradient(180deg, rgb(51, 31, 18), rgb(51, 31, 18)); border:1px solid rgb(255, 255, 255); border-radius:12px; padding:12px; box-shadow:0 20px 60px rgba(0,0,0,0.45);
+    display:flex; gap:12px; align-items:center; transform:translateY(18px) scale(.98); opacity:0; transition: transform .34s cubic-bezier(.2,.9,.3,1), opacity .28s ease;
+  }
+  .combo-toast.show{ transform:none; opacity:1 }
+  .combo-toast .mini-thumb{ width:54px; height:54px; border-radius:10px; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)); color:var(--gold); font-weight:900 }
+  .combo-toast .txt{ flex:1; font-size:14px }
+  .combo-toast .cta{ padding:8px 10px; border-radius:10px; background: linear-gradient(90deg,var(--gold),var(--gold-dark)); color:#000; font-weight:900; cursor:pointer; border:none }
+  .combo-toast .close-x{ background:transparent;border:0;color:var(--muted);cursor:pointer;font-weight:800 }
+
+  /* modal */
+  .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; background: rgba(0,0,0,0.6); opacity:0; pointer-events:none; transition:opacity .18s ease }
+  .modal.open{ opacity:1; pointer-events:auto }
+  .modal-card{ width:clamp(320px, 86%, 780px); background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(8,8,8,0.98)); border-radius:12px; padding:18px; border:1px solid rgba(212,160,85,0.12); max-height:80vh; overflow:auto }
+  .close-modal{ float:right; background:transparent; border:0; color:var(--muted); font-size:18px; cursor:pointer }
+
+  @media (max-width:520px){
+    .logo-wrap{ width:72px; height:72px }
+    .thumb{ width:42px; height:42px }
+    .select-wrap{ width:160px }
+    .combo-toast{ width:calc(100% - 36px); left:18px; right:18px }
+  }
+</style>
+</head>
+<body>
+
+<div class="page" role="main" aria-label="Music Cafe">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="logo-wrap reveal"><img src="Music cafe logo.png" alt="Music Café logo"></div>
+      <h1 class="reveal">MUSIC CAFÉ</h1>
+      <p class="lead reveal">Sip with the beat</p>
+    </div>
+  </section>
+
+  <div class="main">
+
+    <!-- SIDE (Chef picks) -->
+    <aside class="side reveal" id="sidePanel" aria-label="Chef's Picks">
+      <h4>Chef's Picks</h4>
+      <p>Handpicked favorites — view-only.</p>
+
+      <div class="filter" id="filterChips">
+        <!-- chips injected by JS -->
+      </div>
+
+      <!-- combos moved to popup — keep a view button -->
+      <div style="margin-top:8px">
+        <button class="combo-btn" id="openCombosBtn" aria-haspopup="dialog">View Combos</button>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <section class="content">
+      <div class="controls">
+        <div class="left-controls">
+          <div class="select-wrap" id="sortWrap">
+            <div class="custom-select" id="customSelect" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false">
+              <div class="label" id="selectedLabel">Sort: Popular</div>
+              <svg class="arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+            </div>
+            <div class="options" id="optionsList" role="listbox" aria-labelledby="selectedLabel">
+              <div class="option selected" data-value="popular" role="option">Sort: Popular</div>
+              <div class="option" data-value="price-low" role="option">Price: Low → High</div>
+              <div class="option" data-value="price-high" role="option">Price: High → Low</div>
+              <div class="option" data-value="alpha" role="option">A → Z</div>
+            </div>
+          </div>
+
+          <input id="search" placeholder="Search (eg. maagi, noodles)..." />
+        </div>
+
+        <div style="font-size:13px;color:var(--muted)">Total items: <strong id="totalCount">0</strong></div>
+      </div>
+
+      <div class="menu-wrap" id="menuWrap" aria-live="polite">
+        <!-- menu injected -->
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Combo toast (scroll-triggered) -->
+<div class="combo-toast" id="comboToast" role="status" aria-live="polite" aria-hidden="true">
+  <div class="mini-thumb" aria-hidden="true">C</div>
+  <div class="txt"><strong>Signature Share Box</strong><div style="font-size:13px;color:var(--muted)">Cheese Maagi + Peri Peri Fries + Cold Coffee</div></div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+    <button class="cta" id="toastView">View</button>
+    <button class="close-x" id="toastClose" aria-label="Dismiss">✕</button>
+  </div>
+</div>
+
+<!-- Combos modal -->
+<div class="modal" id="comboModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-card" role="document">
+    <button class="close-modal" id="closeModal" aria-label="Close">✕</button>
+    <h2 style="color:var(--gold);margin-top:0">Combos</h2>
+    <div id="modalCombos">
+      <!-- combos list injected -->
+    </div>
+  </div>
+</div>
+
+<script>
+/* DATA (full menu) - same as before */
+const menuData = [
+  {id:1, category:'Maagi', name:'Veg Maagi', price:119},
+  {id:2, category:'Maagi', name:'Masala Maagi', price:99},
+  {id:3, category:'Maagi', name:'Cheese Maagi', price:129},
+  {id:4, category:'Maagi', name:'Lemon Coreander Maagi', price:129},
+  {id:5, category:'Maagi', name:'Chilli Garlic Maagi', price:129},
+  {id:6, category:'Maagi', name:'Schewan Maagi', price:129},
+  {id:7, category:'Maagi', name:'Egg Maagi', price:149},
+  {id:8, category:'Maagi', name:'Egg Chicken Maggi', price:159},
+  {id:9, category:'Veg soup', name:'Cream Of Mushroom', price:99},
+  {id:10, category:'Veg soup', name:'Tomato Basil bruschetta', price:89},
+  {id:11, category:'Veg soup', name:'Cream of Browli', price:89},
+  {id:12, category:'Veg soup', name:'Paneer in Butter Garlic', price:99},
+  {id:13, category:'Veg soup', name:'Hot and Sour Soup', price:89},
+  {id:14, category:'Non Veg Soup', name:'Manchow', price:99},
+  {id:15, category:'Non Veg Soup', name:'Hot and Sour Soup', price:99},
+  {id:16, category:'Non Veg Soup', name:'Chicken spinach with pesto', price:119},
+  {id:17, category:'Non Veg Soup', name:'Lemon Chicken Soup', price:119},
+  {id:18, category:'Non Veg Soup', name:'Clear Chicken Soup', price:99},
+  {id:19, category:'Non Veg Soup', name:'Classic Chicken Soup', price:99},
+  {id:20, category:'Omlet', name:'Fluffy', price:89},
+  {id:21, category:'Omlet', name:'Cheese Loaded', price:119},
+  {id:22, category:'Omlet', name:'Spinach Omlet', price:129},
+  {id:23, category:'Omlet', name:'Egg Poch', price:79},
+  {id:24, category:'Shisha', name:'Royal Paan', price:459},
+  {id:25, category:'Shisha', name:'Dubai Special', price:409},
+  {id:26, category:'Shisha', name:'God Father', price:559},
+  {id:27, category:'Shisha', name:'Bluberry', price:459},
+  {id:28, category:'Shisha', name:'Summer 69', price:459},
+  {id:29, category:'Shisha', name:'Double Apple', price:459},
+  {id:30, category:'Shisha', name:'Kiwi mInt', price:459},
+  {id:31, category:'Shisha', name:'Ak 47', price:459},
+  {id:32, category:'Base', name:'Vodka', price:90},
+  {id:33, category:'Base', name:'Ice Base', price:30},
+  {id:34, category:'Base', name:'Coke Base', price:40},
+  {id:35, category:'Base', name:'Milk', price:40},
+  {id:36, category:'Base', name:'Red Bull', price:130},
+  {id:37, category:'Base', name:'Mojito', price:60},
+  {id:38, category:'Roll', name:'Panner Roll', price:119},
+  {id:39, category:'Roll', name:'Chicken Roll', price:119},
+  {id:40, category:'Roll', name:'Egg Chicken', price:129},
+  {id:41, category:'Roll', name:'Garlic Chicken', price:149},
+  {id:42, category:'Roll', name:'Crispy Chicken Roll', price:139},
+  {id:43, category:'Mocktail', name:'Virgin', price:119},
+  {id:44, category:'Mocktail', name:'Blue Lagoon', price:119},
+  {id:45, category:'Mocktail', name:'Green Mint', price:119},
+  {id:46, category:'Mocktail', name:'Mint', price:119},
+  {id:47, category:'Mocktail', name:'Green Apple', price:129},
+  {id:48, category:'Mocktail', name:'Date In paempar', price:129},
+  {id:49, category:'Mocktail', name:'Watermelon', price:119},
+  {id:50, category:'Mocktail', name:'Fresh Lime Soda', price:99},
+  {id:51, category:'Mocktail', name:'Masala Cold Drink', price:79},
+  {id:52, category:'Shake', name:'Kit Kat', price:139},
+  {id:53, category:'Shake', name:'Oreo', price:139},
+  {id:54, category:'Shake', name:'Dairy Milk', price:139},
+  {id:55, category:'Shake', name:'Straw Berry', price:129},
+  {id:56, category:'Shake', name:'Butterscotch', price:129},
+  {id:57, category:'Shake', name:'Cold Coffe', price:129},
+  {id:58, category:'Shake', name:'Cold Coffe with Ice Cream Chips', price:169},
+  {id:59, category:'Shake', name:'Brawni Shake', price:169},
+  {id:60, category:'Noodles Spice', name:'Veg Special Noodles', price:149},
+  {id:61, category:'Noodles Spice', name:'Veg Hakka Noodles', price:149},
+  {id:62, category:'Noodles Spice', name:'Chicken Hakka Noodles', price:179},
+  {id:63, category:'Noodles Spice', name:'Mix Hakka Noodles', price:199},
+  {id:64, category:'Noodles Spice', name:'cantonese Noodles', price:169},
+  {id:65, category:'Noodles Spice', name:'Singapore Noodles', price:199},
+  {id:66, category:'Noodles Spice', name:'Chilli Garlic Noodles', price:159},
+  {id:67, category:'Noodles Spice', name:'Schezwan Noodles', price:179},
+  {id:68, category:'Noodles Spice', name:'Burnt Garlic Noodles', price:149},
+  {id:69, category:'Noodles Spice', name:'Freid Rice', price:149},
+  {id:70, category:'Noodles Spice', name:'Schezwan Fried Rice', price:159},
+  {id:71, category:'Noodles Spice', name:'Egg Fried Rice', price:169},
+  {id:72, category:'Noodles Spice', name:'EGG Chicken Fried Rice', price:199},
+  {id:73, category:'Non Veg AppeTizer', name:'Chicken Tai Pai', price:189},
+  {id:74, category:'Non Veg AppeTizer', name:'Indo Chiili Wings', price:149},
+  {id:75, category:'Non Veg AppeTizer', name:'Drums Of Heaven', price:199},
+  {id:76, category:'Non Veg AppeTizer', name:'Honey Dragon Chicken', price:229},
+  {id:77, category:'Non Veg AppeTizer', name:'Kung Pao Chicken', price:249},
+  {id:78, category:'Non Veg AppeTizer', name:'Chilli Garlic Pepper Half', price:179},
+  {id:79, category:'Non Veg AppeTizer', name:'Chilli Garlic Pepper Full', price:189},
+  {id:80, category:'Non Veg AppeTizer', name:'Chicken Majestic', price:199},
+  {id:81, category:'Non Veg AppeTizer', name:'BBG Chicken', price:249},
+  {id:82, category:'Non Veg AppeTizer', name:'Buna Fish', price:219},
+  {id:83, category:'Veg Appetizer', name:'Honey Chiili Potato', price:129},
+  {id:84, category:'Veg Appetizer', name:'Peri Peri Fries', price:119},
+  {id:85, category:'Veg Appetizer', name:'Salted Fries', price:119},
+  {id:86, category:'Veg Appetizer', name:'Crispy Corn', price:119},
+  {id:87, category:'Veg Appetizer', name:'Corn Salt And Pepper', price:139},
+  {id:88, category:'Veg Appetizer', name:'Mushroom Salt And Pepper', price:169},
+  {id:89, category:'Veg Appetizer', name:'Paneer Salt And Pepper', price:189},
+  {id:90, category:'Veg Appetizer', name:'Veg Finger', price:129},
+  {id:91, category:'Veg Appetizer', name:'Chiili Mushroom', price:169},
+  {id:92, category:'Veg Appetizer', name:'Chilli Baby Corn', price:129},
+  {id:93, category:'Veg Appetizer', name:'Baby Corn Salt And Pepper', price:139},
+  {id:94, category:'Veg Appetizer', name:'Music special Siracha Paneer', price:159},
+  {id:95, category:'Bread/Toast', name:'Cheese Garlic Toast', price:50},
+  {id:96, category:'Bread/Toast', name:'Cheese Chilli Toast', price:60},
+  {id:97, category:'Bread/Toast', name:'Butter Garlic Bread', price:40},
+  {id:98, category:'Bread/Toast', name:'Bun Maska', price:40},
+  {id:99, category:'Bread/Toast', name:'Ban Maska With Jam', price:60},
+  {id:100, category:'Burger', name:'Veg Patty Burger', price:139},
+  {id:101, category:'Burger', name:'Chicken Patty Burger', price:149},
+  {id:102, category:'Burger', name:'Crispy Chicken Burger', price:169},
+  {id:103, category:'Burger', name:'Paneer Burger', price:169},
+  {id:104, category:'Pasta', name:'Agilo Ollio Spageti Veg', price:199},
+  {id:105, category:'Pasta', name:'Agilo Ollio Spageti Non Veg', price:239},
+  {id:106, category:'Pasta', name:'Al Pesto Spageti Pasta Veg', price:189},
+  {id:107, category:'Pasta', name:'Al Pesto Spageti Pasta Non Veg', price:219},
+  {id:108, category:'Pasta', name:'White Sauce Veg', price:169},
+  {id:109, category:'Pasta', name:'White Sauce Non Veg', price:199},
+  {id:110, category:'Pasta', name:'Red Sauce Veg', price:189},
+  {id:111, category:'Pasta', name:'Red Sauce Non Veg', price:189},
+  {id:112, category:'Pasta', name:'Fried Jukuni Pasta', price:199},
+  {id:113, category:'Pasta', name:'White Alfredo Veg', price:199},
+  {id:114, category:'Pasta', name:'White Alfredo Non Veg', price:239},
+  {id:115, category:'Pasta', name:'Red Arabiata Veg', price:199},
+  {id:116, category:'Pasta', name:'Red Arabiata Non Veg', price:239},
+  {id:117, category:'Pasta', name:'Creamy Pasta Veg', price:219},
+  {id:118, category:'Pasta', name:'Creamy Pasta Non Veg', price:259},
+  {id:119, category:'Student Combo', name:'2 Chai + Peri Peri Fries', price:149},
+  {id:120, category:'Student Combo', name:'2 Chai + Bun Maska', price:89}
+];
+
+/* suggested combos - used for modal & toast */
+const combos = [
+  {id:'C1', title:'Classic Maagi Meal', text:'Veg Maagi + Fresh Lime Soda', price:169},
+  {id:'C2', title:'Double Taste Maagi Combo', text:'Masala Maagi + Cheese Maagi + Fries', price:279},
+  {id:'C3', title:'Signature Share Box', text:'Cheese Maagi + Peri Peri Fries + Cold Coffee', price:329},
+  {id:'C4', title:'Hookah Premium', text:'Premium Shisha + Ice Base (view-only)', price:899}
+];
+
+/* ---------- DOM helpers ---------- */
+const qs = (s,p=document)=> p.querySelector(s);
+const qsa = (s,p=document)=> Array.from(p.querySelectorAll(s));
+const fmt = p => '₹' + Number(p).toFixed(0);
+
+function groupByCategory(data){
+  const map = {};
+  data.forEach(it=>{ const c = it.category||'Uncategorized'; if(!map[c]) map[c]=[]; map[c].push(it); });
+  return map;
+}
+
+/* ---------- render menu & side chips ---------- */
+function renderMenu(data){
+  const wrap = qs('#menuWrap'); wrap.innerHTML = '';
+  const grouped = groupByCategory(data);
+  let total=0;
+  Object.keys(grouped).forEach(cat=>{
+    const sec = document.createElement('div'); sec.className='section-card reveal';
+    const hdr = document.createElement('div'); hdr.className='section-header';
+    hdr.innerHTML = `<h3>${escapeHtml(cat)}</h3><small>${grouped[cat].length} items</small>`;
+    sec.appendChild(hdr);
+    grouped[cat].forEach(it=>{
+      total++;
+      const row = document.createElement('div'); row.className='item-row';
+      row.innerHTML = `<div class="left"><div class="thumb" aria-hidden="true">${escapeHtml((it.name||'')[0]||'M')}</div><div class="meta"><div class="name">${escapeHtml(it.name)}</div><div class="desc" aria-hidden="true">${escapeHtml(it.desc||'')}</div></div></div><div class="price">${fmt(it.price)}</div>`;
+      sec.appendChild(row);
+    });
+    wrap.appendChild(sec);
+  });
+  qs('#totalCount').textContent = total;
+  setTimeout(()=> qsa('.reveal').forEach((el,i)=> setTimeout(()=> el.classList.add('show'), i*20)), 60);
+}
+
+function renderSide(){
+  const chips = qs('#filterChips'); chips.innerHTML='';
+  const cats = Object.keys(groupByCategory(menuData));
+  chips.appendChild(makeChip('All'));
+  cats.forEach(c=> chips.appendChild(makeChip(c)));
+  // side no longer lists combos (user asked), combos are in modal
+}
+
+/* chips */
+function makeChip(label){
+  const btn = document.createElement('button'); btn.className='chip'; btn.textContent=label; btn.dataset.filter=label;
+  btn.addEventListener('click', function(){
+    qsa('.chip').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+    const f=this.dataset.filter;
+    if(f==='All') renderMenu(menuData);
+    else renderMenu(menuData.filter(it => it.category === f));
+  });
+  return btn;
+}
+
+/* search and sort (debounced) */
+function debounce(fn, ms=180){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); } }
+qs('#search').addEventListener('input', debounce(function(e){
+  const q = e.target.value.trim().toLowerCase();
+  if(!q){ renderMenu(menuData); return; }
+  const filtered = menuData.filter(it => (it.name + ' ' + (it.desc||'') + ' ' + it.category).toLowerCase().includes(q));
+  renderMenu(filtered);
+}, 220));
+
+/* custom select */
+const customSelect = qs('#customSelect'), optionsList = qs('#optionsList'), selectedLabel = qs('#selectedLabel');
+customSelect.addEventListener('click', toggleOptions);
+customSelect.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleOptions(); } if(e.key==='Escape') closeOptions(); });
+document.addEventListener('click', (e)=>{ if(!customSelect.contains(e.target) && !optionsList.contains(e.target)) closeOptions(); });
+qsa('.option').forEach(opt=> opt.addEventListener('click', function(){ qsa('.option').forEach(o=>o.classList.remove('selected')); this.classList.add('selected'); selectedLabel.textContent = this.textContent; closeOptions(); applySort(this.dataset.value); }));
+
+function toggleOptions(){ const open = optionsList.classList.toggle('open'); customSelect.setAttribute('aria-expanded', open?'true':'false'); qs('.arrow', customSelect).style.transform = open ? 'rotate(180deg)' : 'none'; }
+function closeOptions(){ optionsList.classList.remove('open'); customSelect.setAttribute('aria-expanded','false'); qs('.arrow', customSelect).style.transform='none'; }
+function applySort(val){ let arr=[...menuData]; if(val==='price-low') arr.sort((a,b)=>a.price-b.price); else if(val==='price-high') arr.sort((a,b)=>b.price-a.price); else if(val==='alpha') arr.sort((a,b)=>a.name.localeCompare(b.name)); renderMenu(arr); }
+
+/* ---------- combos modal logic ---------- */
+const comboModal = qs('#comboModal'), modalBody = qs('#modalCombos'), openCombosBtn = qs('#openCombosBtn'), closeModalBtn = qs('#closeModal');
+function openModal(){ comboModal.classList.add('open'); comboModal.setAttribute('aria-hidden','false'); }
+function closeModal(){ comboModal.classList.remove('open'); comboModal.setAttribute('aria-hidden','true'); }
+openCombosBtn.addEventListener('click', ()=> { populateCombos(); openModal(); });
+qs('#closeModal').addEventListener('click', closeModal);
+comboModal.addEventListener('click', (e)=> { if(e.target === comboModal) closeModal(); });
+document.addEventListener('keydown', (e)=> { if(e.key === 'Escape') closeModal(); });
+
+function populateCombos(){
+  modalBody.innerHTML = '';
+  combos.forEach(c => {
+    const el = document.createElement('div');
+    el.style = "display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03)";
+    el.innerHTML = `<div><strong style="color:var(--gold)">${escapeHtml(c.title)}</strong><div style="font-size:13px;color:var(--muted)">${escapeHtml(c.text)}</div></div><div style="font-weight:900;color:var(--gold)">${fmt(c.price)}</div>`;
+    modalBody.appendChild(el);
+  });
+}
+
+/* ---------- scroll-triggered toast ---------- */
+const toast = qs('#comboToast'), toastView = qs('#toastView'), toastClose = qs('#toastClose');
+let toastShown = false;
+function showToast(){
+  if(toastShown) return;
+  toastShown = true;
+  toast.classList.add('show');
+  toast.setAttribute('aria-hidden','false');
+}
+function hideToast(){ toast.classList.remove('show'); toast.setAttribute('aria-hidden','true'); }
+
+// open modal from toast
+toastView.addEventListener('click', ()=> { populateCombos(); openModal(); hideToast(); });
+toastClose.addEventListener('click', ()=> { hideToast(); });
+
+// show toast once when user scrolls past threshold
+let toastFired = false;
+window.addEventListener('scroll', function onScroll(){
+  if(toastFired) return;
+  const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+  if(scrollPercent > 0.35){ showToast(); toastFired = true; }
+});
+
+/* accessibility focus outlines */
+document.addEventListener('keyup', (e)=> { if(e.key === 'Tab') document.body.classList.add('show-focus'); });
+
+/* utils */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* init */
+renderSide();
+renderMenu(menuData);
+
+</script>
+</body>
+</html>
